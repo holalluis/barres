@@ -1,0 +1,311 @@
+<!doctype html><html><head>
+  <meta charset=utf8>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Barres</title>
+  <style>
+    body{
+      margin:0;
+      background:white;
+    }
+    canvas{
+      background:black;
+    }
+    summary{
+      background:lightblue
+    }
+    summary:hover{
+      cursor:pointer;
+      text-decoration:underline;
+    }
+    .flex{
+      display:flex;
+    }
+    .grid{
+      display:grid;
+      align-items:center;
+    }
+    input[type=number]{
+      text-align:right;
+    }
+  </style>
+</head>
+
+<!--botons-->
+<div style="background:white">
+  <div class=flex style="align-items:center">
+    <button onclick="playing=true"            style="padding:0.618em 1.618em">play</button>
+    <button onclick="playing=false"           style="padding:0.618em 1.618em">pausa</button>
+    <button onclick="reset_all()"             style="padding:0.618em 1.618em">reset</button>
+    <button id=btn_veure_boligraf onclick="set_veure_boligraf(!veure_boligraf)" style="padding:0.618em 1.618em">bolígraf</button>
+
+    <span>&emsp; ratio noves barres:</span>
+    <input
+      id=ratio_noves_barres
+      type=number
+      onchange="set_ratio_noves_barres(parseFloat(this.value))"
+      placeholder="ratio noves barres"
+      max=99
+      style="width:100px"
+    >
+    <button onclick="set_ratio_noves_barres(ratio_noves_barres/3)">/3</button>
+    <button onclick="set_ratio_noves_barres(ratio_noves_barres/2)">/2</button>
+    <button onclick="set_ratio_noves_barres(ratio_noves_barres*2)">x2</button>
+    <button onclick="set_ratio_noves_barres(ratio_noves_barres*3)">x3</button>
+    <button onclick="set_ratio_noves_barres(naur)">=φ</button>
+    <button onclick="set_ratio_noves_barres(Math.PI)">=π</button>
+    <button onclick="set_ratio_noves_barres(Math.E)">=e</button>
+    <button onclick="set_ratio_noves_barres(Math.sqrt(2))">=√2</button>
+    <button onclick="afegir_barra()" style="padding:0.618em 1.618em">afegir barra</button>
+
+  </div>
+  <details open>
+    <summary>Paràmetres de cada barra</summary>
+    <div id=controls_renderitzats>carregant...</div>
+  </details>
+</div>
+
+<!--canvas--><canvas></canvas>
+
+<!--animació-->
+<script>
+  let canvas=document.querySelector('canvas');
+  canvas.width=window.innerWidth;
+  canvas.height=window.innerHeight;
+  let c=canvas.getContext('2d');
+
+  let punt_mig = {x:canvas.width/2, y:canvas.height/2};
+  const naur = (1+Math.sqrt(5))/2; //number 1.618
+
+  //opcions botons
+  let playing        = false;
+  let veure_boligraf = true;
+  let ratio_noves_barres = 5/3;
+
+  class Barra{
+    constructor(origen, llargada, velocitat){
+      this.origen    = origen; //null o objecte Barra
+      this.llargada  = llargada; //number (px)
+      this.velocitat = velocitat; //number (rad/s)
+
+      this.color=(function(){
+        let r=Math.floor(Math.random()*255).toString(16);
+        let g=Math.floor(Math.random()*255).toString(16);
+        let b=Math.floor(Math.random()*255).toString(16);
+        r=r.length==1?'0'+r:r;
+        g=g.length==1?'0'+g:g;
+        b=b.length==1?'0'+b:b;
+        return `#${r}${g}${b}`;
+      })();
+
+      this.angle=0;
+      this.set_punts_inicials();
+    }
+
+    set_punts_inicials(){
+      this.inici={
+        x: this.origen ? this.origen.final.x : punt_mig.x,
+        y: this.origen ? this.origen.final.y : punt_mig.y,
+      };
+      this.final={
+        x: this.inici.x + this.llargada*Math.cos(this.angle),
+        y: this.inici.y + this.llargada*Math.sin(this.angle),
+      };
+    }
+
+    dibuixa(){
+      c.beginPath();
+      c.strokeStyle=this.color;
+      c.lineWidth=5;
+
+      c.moveTo(this.inici.x,this.inici.y);
+      c.lineTo(this.final.x,this.final.y);
+      c.stroke();
+    }
+
+    update(){
+      if(playing){
+        this.angle += this.velocitat/60;
+      }
+
+      let R        = this.llargada;
+      let angle    = this.angle;
+
+      if(this.origen){
+        this.inici.x = this.origen.final.x;
+        this.inici.y = this.origen.final.y;
+      }
+
+      this.final.x = this.inici.x + R*Math.cos(angle);
+      this.final.y = this.inici.y + R*Math.sin(angle);
+    }
+
+    update_i_dibuixa(){
+      this.update();
+      this.dibuixa();
+    }
+  }
+
+  let punts_boligraf=[];
+
+  let barres=[];
+  afegir_barra();
+
+  function dibuixa_barra_boligraf(barra_boligraf){
+    //update
+    if(playing){
+      punts_boligraf.push({
+        x: barra_boligraf.final.x,
+        y: barra_boligraf.final.y,
+      });
+    }
+
+    if(punts_boligraf.length==0) return;
+
+    //draw
+    if(veure_boligraf){
+      c.beginPath();
+      c.lineWidth=1;
+      c.strokeStyle=barra_boligraf.color;
+      c.moveTo(punts_boligraf[0].x, punts_boligraf[0].y);
+      punts_boligraf.forEach(punt=>{
+        c.lineTo(punt.x, punt.y);
+      });
+      c.stroke();
+    }
+  }
+
+  function reset_all(){
+    barres.forEach((barra,i)=>{
+      barra.angle=0;
+      barra.set_punts_inicials();
+    });
+    punts_boligraf=[];
+    if(window.render_controls){
+      render_controls();
+    }
+  }
+
+  function afegir_barra(){
+    let ratio = ratio_noves_barres;
+    let origen = barres[barres.length-1] || null; //ultima barra
+    let llargada  = origen ? origen.llargada*(1/ratio) : 100; //px
+    let velocitat = origen ? origen.velocitat*ratio    : 2;   //rad/frame
+    let barra = new Barra(origen, llargada, velocitat);
+    barres.push(barra);
+    reset_all();
+
+    if(window.render_controls){
+      render_controls();
+    }
+  }
+
+  function set_veure_boligraf(nou_valor){
+    veure_boligraf=nou_valor;
+    punts_boligraf=[];
+    document.querySelector("#btn_veure_boligraf").style.background=veure_boligraf?"#af0":"";
+  }
+
+  function set_ratio_noves_barres(nou_valor){
+    ratio_noves_barres=nou_valor;
+    document.querySelector("#ratio_noves_barres").value=ratio_noves_barres;
+  }
+
+  (function animate(){
+    requestAnimationFrame(animate);
+    c.clearRect(0,0,canvas.width,canvas.height);
+
+    //dibuixa totes les barres
+    if(barres.length){
+      barres.forEach(b=>b.update_i_dibuixa());
+      dibuixa_barra_boligraf(barres[barres.length-1]);
+    }
+  })();
+</script>
+
+<!--crear controls-->
+<script>
+  function render_controls(){
+    //esborra controls
+    document.querySelector("#controls_renderitzats").innerHTML="";
+
+    //controls per cada barra 
+    barres.forEach(barra=>{
+      let div = document.createElement("div"); //container
+      document.querySelector("#controls_renderitzats").appendChild(div);
+      div.classList.add("flex");
+
+      let input = null; //botó per cada característica
+
+      //color
+      input = document.createElement("input"); div.appendChild(input);
+      input.type="color";
+      input.value=barra.color;
+      input.setAttribute("placeholder","color");
+      input.addEventListener("change",function(){
+        barra.color=this.value;
+      });
+
+      //llargada
+      input = document.createElement("input"); div.appendChild(input);
+      input.type="number";
+      input.value=barra.llargada;
+      input.setAttribute("placeholder","llargada");
+      input.addEventListener("change",function(){
+        let value = parseFloat(this.value);
+        barra.llargada=value;
+      });
+
+      //velocitat
+      input = document.createElement("input"); div.appendChild(input);
+      input.type="number";
+      input.value=barra.velocitat;
+      input.setAttribute("placeholder","velocitat");
+      input.addEventListener("change",function(){
+        let value = parseFloat(this.value);
+        barra.velocitat=value;
+      });
+
+      //botó esborra barra
+      input = document.createElement("button"); div.appendChild(input);
+      input.innerText="esborrar";
+      input.addEventListener("click",function(){
+        barres.splice(barres.indexOf(barra),1);
+        punts_boligraf=[];
+        render_controls();
+      });
+    });
+
+    //controls per totes les barres
+    let div = document.createElement("div"); //container
+    document.querySelector("#controls_renderitzats").appendChild(div);
+    div.classList.add("flex");
+
+    let input = null; //botó per cada característica
+
+    //color
+    div.innerHTML="<div style='width:50px;text-align:center'>totes</div>";
+
+    //llargada
+    input = document.createElement("input"); div.appendChild(input);
+    input.type="number";
+    input.setAttribute("placeholder","llargada");
+    input.addEventListener("change",function(){
+      let value = parseFloat(this.value);
+      barres.forEach(barra=>barra.llargada=value);
+      render_controls();
+    });
+
+    //velocitat
+    input = document.createElement("input"); div.appendChild(input);
+    input.type="number";
+    input.setAttribute("placeholder","velocitat");
+    input.addEventListener("change",function(){
+      let value = parseFloat(this.value);
+      barres.forEach(barra=>barra.velocitat=value);
+      render_controls();
+    });
+  }
+  render_controls();
+  set_ratio_noves_barres(ratio_noves_barres);
+  set_veure_boligraf(veure_boligraf);
+</script>
