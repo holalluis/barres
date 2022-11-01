@@ -37,8 +37,11 @@
     <button onclick="playing=false"           style="padding:0.618em 1.618em">pausa</button>
     <button onclick="reset_all()"             style="padding:0.618em 1.618em">reset</button>
     <button id=btn_veure_boligraf onclick="set_veure_boligraf(!veure_boligraf)" style="padding:0.618em 1.618em">bolígraf</button>
+    <button onclick="afegir_barra()" style="padding:0.618em 1.618em">afegir barra</button>
+  </div>
 
-    <span>&emsp; ratio noves barres:</span>
+  <div class=flex style="align-items:center">
+    <span>ratio noves barres:</span>
     <input
       id=ratio_noves_barres
       type=number
@@ -55,11 +58,10 @@
     <button onclick="set_ratio_noves_barres(Math.PI)">=π</button>
     <button onclick="set_ratio_noves_barres(Math.E)">=e</button>
     <button onclick="set_ratio_noves_barres(Math.sqrt(2))">=√2</button>
-    <button onclick="afegir_barra()" style="padding:0.618em 1.618em">afegir barra</button>
-
   </div>
+
   <details open>
-    <summary>Paràmetres de cada barra</summary>
+    <summary>Paràmetres barres</summary>
     <div id=controls_renderitzats>carregant...</div>
   </details>
 </div>
