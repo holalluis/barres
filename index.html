@@ -6,6 +6,7 @@
     body{
       margin:0;
       background:white;
+      background:#aaa;
     }
     canvas{
       background:black;
@@ -52,9 +53,9 @@
       style="width:100px"
     >
     <button onclick="set_ratio_noves_barres(ratio_noves_barres/3)">/3</button>
+    <button onclick="set_ratio_noves_barres(ratio_noves_barres*3)">x3</button>
     <button onclick="set_ratio_noves_barres(ratio_noves_barres/2)">/2</button>
     <button onclick="set_ratio_noves_barres(ratio_noves_barres*2)">x2</button>
-    <button onclick="set_ratio_noves_barres(ratio_noves_barres*3)">x3</button>
     <button onclick="set_ratio_noves_barres(naur)">=φ</button>
     <button onclick="set_ratio_noves_barres(Math.PI)">=π</button>
     <button onclick="set_ratio_noves_barres(Math.E)">=e</button>
@@ -77,18 +78,19 @@
   let c=canvas.getContext('2d');
 
   let punt_mig = {x:canvas.width/2, y:canvas.height/2};
-  const naur = (1+Math.sqrt(5))/2; //number 1.618
+  const naur = (1+Math.sqrt(5))/2; //number 1.618 àuric
 
   //opcions botons
   let playing        = false;
   let veure_boligraf = true;
-  let ratio_noves_barres = 5/3;
+  let ratio_noves_barres = 1;
 
   class Barra{
     constructor(origen, llargada, velocitat){
-      this.origen    = origen; //null o objecte Barra
-      this.llargada  = llargada; //number (px)
-      this.velocitat = velocitat; //number (rad/s)
+      this.origen    = origen;    //null o objecte Barra
+      this.llargada  = llargada;  //number (px)
+      this.velocitat = velocitat; //number (rad/frame)
+      this.angle     = 0;         //number (angle inicial rad)
 
       this.color=(function(){
         let r=Math.floor(Math.random()*255).toString(16);
@@ -100,7 +102,6 @@
         return `#${r}${g}${b}`;
       })();
 
-      this.angle=0;
       this.set_punts_inicials();
     }
 
@@ -154,14 +155,13 @@
   afegir_barra();
 
   function dibuixa_barra_boligraf(barra_boligraf){
-    //update
+    //update array punts boligraf
     if(playing){
       punts_boligraf.push({
         x: barra_boligraf.final.x,
         y: barra_boligraf.final.y,
       });
     }
-
     if(punts_boligraf.length==0) return;
 
     //draw
@@ -189,17 +189,13 @@
   }
 
   function afegir_barra(){
-    let ratio = ratio_noves_barres;
-    let origen = barres[barres.length-1] || null; //ultima barra
-    let llargada  = origen ? origen.llargada*(1/ratio) : 175; //px
-    let velocitat = origen ? origen.velocitat*ratio    : 3;   //rad/frame
+    let ratio     = ratio_noves_barres;
+    let origen    = barres[barres.length-1] || null; //objecte ultima barra
+    let llargada  = origen ? origen.llargada*(1/ratio) : 100; //px
+    let velocitat = origen ? origen.velocitat*ratio    : 1;   //rad/frame
     let barra = new Barra(origen, llargada, velocitat);
     barres.push(barra);
     reset_all();
-
-    if(window.render_controls){
-      render_controls();
-    }
   }
 
   function set_veure_boligraf(nou_valor){
@@ -231,7 +227,7 @@
     //esborra controls
     document.querySelector("#controls_renderitzats").innerHTML="";
 
-    //controls per cada barra 
+    //controls per cada barra
     barres.forEach(barra=>{
       let div = document.createElement("div"); //container
       document.querySelector("#controls_renderitzats").appendChild(div);
