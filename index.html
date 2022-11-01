@@ -189,7 +189,7 @@
     let ratio = ratio_noves_barres;
     let origen = barres[barres.length-1] || null; //ultima barra
     let llargada  = origen ? origen.llargada*(1/ratio) : 100; //px
-    let velocitat = origen ? origen.velocitat*ratio    : 2;   //rad/frame
+    let velocitat = origen ? origen.velocitat*ratio    : 3;   //rad/frame
     let barra = new Barra(origen, llargada, velocitat);
     barres.push(barra);
     reset_all();
